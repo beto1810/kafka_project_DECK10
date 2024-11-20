@@ -1,5 +1,6 @@
 from config import load_config, logger
 import psycopg2
+from psycopg2 import pool
 import json
 
 
@@ -14,10 +15,8 @@ def get_db_connection(postgresql_config):
     return conn
 
 
-def store_message_in_db(message, timestamp, kafka_offset):
+def store_message_in_db(conn,message, timestamp, kafka_offset):
     """Store Kafka messages in the PostgreSQL database."""
-    db_config = load_config("postgresql")
-    conn = get_db_connection(db_config)
     cursor = conn.cursor()
     
     try:

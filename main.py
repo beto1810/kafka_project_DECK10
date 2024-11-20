@@ -1,6 +1,6 @@
 from kafka import consume_message, produce_message
-from db import store_message_in_db
-from config import logger
+from db import store_message_in_db, get_db_connection
+from config import logger, load_config
 import threading
 
 
@@ -13,7 +13,9 @@ def forward_to_local(message, timestamp, kafka_offset):
 def save_to_db(message, timestamp, kafka_offset):
     """Save messages from Kafka Local to the database."""
     logger.info("Saving message to database...")
-    store_message_in_db(message, timestamp, kafka_offset)
+    db_config = load_config("postgresql")
+    conn = get_db_connection(db_config)
+    store_message_in_db(conn,message, timestamp, kafka_offset)
 
 def consume_from_kafka_server():
     """Consume messages from Kafka Server and forward to Kafka Local."""
