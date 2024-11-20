@@ -1,6 +1,6 @@
 from config import load_config, logger
 import psycopg2
-
+import json
 
 
 def get_db_connection(postgresql_config):
@@ -21,6 +21,8 @@ def store_message_in_db(message, timestamp, kafka_offset):
     cursor = conn.cursor()
     
     try:
+        if not isinstance(message, str):
+            message = message.decode('utf-8')
         # Use ON CONFLICT to avoid duplicate messages based on the kafka_offset
         cursor.execute("""
             INSERT INTO kafka_data (message, timestamp, kafka_offset)

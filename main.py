@@ -7,7 +7,7 @@ import threading
 def forward_to_local(message, timestamp, kafka_offset):
     """Forward messages from Kafka Server to Kafka Local."""
     logger.info("Forwarding message to Kafka Local...")
-    produce_message("kafka_local", "kafka_local_topic", message)
+    produce_message("kafka_local", "product_view", message)
 
 
 def save_to_db(message, timestamp, kafka_offset):
@@ -15,25 +15,28 @@ def save_to_db(message, timestamp, kafka_offset):
     logger.info("Saving message to database...")
     store_message_in_db(message, timestamp, kafka_offset)
 
-def main():
-    # Step 1: Consume from Kafka Server and forward to Kafka Local
+def consume_from_kafka_server():
+    """Consume messages from Kafka Server and forward to Kafka Local."""
     local_producer_handle = consume_message("kafka_server", ["product_view"], forward_to_local)
-    
-    # Step 2: Consume from Kafka Local and store in database
-    postgres_handler = consume_message("kafka_local", ["product_view"], save_to_db)
+    local_producer_handle.run()  # Run indefinitely, consume messages
 
-    # Create threads for each handler
-    threading1 = threading.Thread(target=local_producer_handle.run)  # Pass method reference
-    threading2 = threading.Thread(target=postgres_handler.run)
+def consume_from_kafka_local():
+    """Consume messages from Kafka Local and store in DB."""
+    postgres_handler = consume_message("kafka_local", ["product_view"], save_to_db)
+    postgres_handler.run()  # Run indefinitely, consume messages
+
+def main():
+    # Create threads for each Kafka consumer
+    threading1 = threading.Thread(target=consume_from_kafka_server)
+    threading2 = threading.Thread(target=consume_from_kafka_local)
 
     # Start threads
     threading1.start()
     threading2.start()
 
-    # Wait for threads to finish
+    # Wait for threads to finish (though they will run indefinitely)
     threading1.join()
     threading2.join()
-
 
 if __name__ == "__main__":
     main()
